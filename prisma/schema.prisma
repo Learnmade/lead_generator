@@ -1,0 +1,212 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                  String          @id @default(auto()) @map("_id") @db.ObjectId
+  email               String          @unique
+  name                String?
+  image               String?
+  emailVerified       DateTime?
+  password            String?         // hashed, for email auth
+  
+  // Account settings
+  company             String?
+  industry            String?
+  targetAudience      String?
+  apiCredits          Int             @default(1000)
+  subscriptionTier    String          @default("free") // free, pro, enterprise
+  
+  // API keys (encrypted in production)
+  openaiApiKey        String?
+  hunterApiKey        String?
+  
+  // Relationships
+  leads               Lead[]
+  campaigns           Campaign[]
+  emailLogs           EmailLog[]
+  accounts            Account[]
+  sessions            Session[]
+  
+  // Billing & Trial
+  subscriptionStatus  String          @default("FREE") // FREE, TRIAL, ACTIVE, EXPIRED
+  trialEndsAt         DateTime?
+  cardLast4           String?
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+}
+
+model UsedCard {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  fingerprint String   @unique // Unique hash of the card to prevent reuse
+  createdAt   DateTime @default(now())
+}
+
+model Account {
+  id                  String          @id @default(auto()) @map("_id") @db.ObjectId
+  userId              String          @db.ObjectId
+  type                String
+  provider            String
+  providerAccountId   String
+  refresh_token       String?
+  access_token        String?
+  expires_at          Int?
+  token_type          String?
+  scope               String?
+  id_token            String?
+  session_state       String?
+
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id                  String          @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken        String          @unique
+  userId              String          @db.ObjectId
+  expires             DateTime
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Lead {
+  id                  String          @id @default(auto()) @map("_id") @db.ObjectId
+  userId              String          @db.ObjectId
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Business Information
+  companyName         String
+  website             String?
+  industry            String?
+  companySize         String?         // "1-10", "11-50", "51-200", "201-500", "500+"
+  foundedYear         Int?
+  
+  // Contact Information
+  firstName           String?
+  lastName            String?
+  email               String?
+  phone               String?
+  jobTitle            String?
+  linkedinProfile     String?
+  
+  // AI Analysis Results
+  aiScore             Int             @default(0)  // 0-100
+  painPoints          String          @default("[]")  // JSON array
+  buyingSignals       String          @default("[]")  // JSON array
+  websiteTechStack    String?         // JSON: {cms, framework, hosting, etc}
+  fitReason           String?
+  
+  // Lead Status & Tracking
+  status              String          @default("new")  // new, contacted, interested, proposal, won, lost, unresponsive
+  priority            String          @default("medium") // low, medium, high
+  source              String          @default("ai_discovery")  // ai_discovery, manual_import, csv_upload, api
+  
+  // Engagement Metrics
+  emailsSent          Int             @default(0)
+  emailsOpened        Int             @default(0)
+  emailsClicked       Int             @default(0)
+  repliesReceived     Int             @default(0)
+  lastContactedAt     DateTime?
+  nextFollowUpAt      DateTime?
+  
+  // Metadata
+  tags                String          @default("[]")  // JSON array
+  notes               String?
+  customFields        String          @default("{}")  // JSON for extensibility
+  
+  emailLogs           EmailLog[]
+  
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  
+  @@index([userId, status])
+  @@index([userId, aiScore])
+  @@index([userId, createdAt])
+}
+
+model Campaign {
+  id                  String          @id @default(auto()) @map("_id") @db.ObjectId
+  userId              String          @db.ObjectId
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Campaign Info
+  name                String
+  description         String?
+  type                String          @default("sequence")  // sequence, single, followup
+  
+  // Email Content
+  subject             String
+  body                String          // HTML content
+  previewText         String?         // email preview
+  
+  // Personalization
+  personalizations    String          @default("[]")  // JSON: ["{{firstName}}", "{{companyName}}"]
+  aiGenerated         Boolean         @default(false)
+  
+  // Status & Scheduling
+  status              String          @default("draft")  // draft, scheduled, active, paused, completed, archived
+  scheduledFor        DateTime?
+  startedAt           DateTime?
+  completedAt         DateTime?
+  
+  // Campaign Stats
+  totalSent           Int             @default(0)
+  totalOpened         Int             @default(0)
+  totalClicked        Int             @default(0)
+  totalReplies        Int             @default(0)
+  
+  // Configuration
+  sendDelay           Int             @default(3600)  // seconds between emails in sequence
+  maxRecipientsPerDay Int             @default(50)
+  
+  emailLogs           EmailLog[]
+  
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  
+  @@index([userId, status])
+}
+
+model EmailLog {
+  id                  String          @id @default(auto()) @map("_id") @db.ObjectId
+  userId              String          @db.ObjectId
+  leadId              String          @db.ObjectId
+  campaignId          String          @db.ObjectId
+  
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lead                Lead            @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  campaign            Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  
+  // Email Details
+  toEmail             String
+  toName              String?
+  subject             String
+  body                String
+  
+  // Tracking
+  messageId           String?         // from email provider
+  sentAt              DateTime        @default(now())
+  openedAt            DateTime?
+  clickedAt           DateTime?
+  repliedAt           DateTime?
+  bounced             Boolean         @default(false)
+  bouncedAt           DateTime?
+  
+  // Status
+  status              String          @default("pending")  // pending, sent, failed, bounced, opened, clicked, replied
+  errorMessage        String?
+  
+  // Metadata
+  metadata            String          @default("{}")  // JSON for tracking pixels, links, etc
+  
+  createdAt           DateTime        @default(now())
+  
+  @@index([userId, sentAt])
+  @@index([leadId])
+  @@index([status])
+}

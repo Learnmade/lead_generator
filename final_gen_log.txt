@@ -1,0 +1,16 @@
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Error: Prisma schema validation - (get-dmmf wasm)
+Error code: P1012
+error: Error validating field `emailLogs` in model `User`: The relation field `emailLogs` on model `User` is missing an opposite relation field on the model `EmailLog`. Either run `prisma format` or add it manually.
+  -->  prisma\schema.prisma:32
+   | 
+31 |   campaigns           Campaign[]
+32 |   emailLogs           EmailLog[]
+33 |   accounts            Account[]
+   | 
+
+Validation Error Count: 1
+[Context: getDmmf]
+
+Prisma CLI Version : 6.19.1
