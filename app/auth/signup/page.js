@@ -16,6 +16,7 @@ const features = [
 
 export default function SignUpPage() {
     const [isLoading, setIsLoading] = useState(false);
+    const [strength, setStrength] = useState(0);
 
     const handleGitHubLogin = async () => {
         setIsLoading(true);
@@ -154,16 +155,29 @@ export default function SignUpPage() {
                                         type="password"
                                         autoComplete="new-password"
                                         required
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            let score = 0;
+                                            if (val.length > 6) score++;
+                                            if (val.length > 10) score++;
+                                            if (/[0-9]/.test(val)) score++;
+                                            if (/[^A-Za-z0-9]/.test(val)) score++;
+                                            setStrength(score);
+                                        }}
                                         className="block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 px-3"
                                     />
                                 </div>
-                                {/* Password Strength Meter Helper - Static for UI visual */}
+                                {/* Password Strength Meter */}
                                 <div className="mt-2 flex gap-1 h-1">
-                                    <div className="flex-1 bg-red-500 rounded-full"></div>
-                                    <div className="flex-1 bg-yellow-400 rounded-full"></div>
-                                    <div className="flex-1 bg-gray-200 rounded-full"></div>
+                                    <div className={`flex-1 rounded-full transition-colors ${strength > 0 ? (strength > 2 ? 'bg-green-500' : strength > 1 ? 'bg-yellow-400' : 'bg-red-500') : 'bg-gray-200'}`}></div>
+                                    <div className={`flex-1 rounded-full transition-colors ${strength > 1 ? (strength > 2 ? 'bg-green-500' : 'bg-yellow-400') : 'bg-gray-200'}`}></div>
+                                    <div className={`flex-1 rounded-full transition-colors ${strength > 3 ? 'bg-green-500' : 'bg-gray-200'}`}></div>
                                 </div>
-                                <p className="mt-1 text-xs text-gray-500">Strength: <span className="text-yellow-600 font-medium">Medium</span></p>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Strength: <span className={`font-medium ${strength > 2 ? 'text-green-600' : strength > 1 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                        {strength > 3 ? 'Strong' : strength > 2 ? 'Good' : strength > 1 ? 'Medium' : 'Weak'}
+                                    </span>
+                                </p>
                             </div>
 
                             <div>
