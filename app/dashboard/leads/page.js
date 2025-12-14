@@ -147,7 +147,7 @@ export default function LeadsPage() {
                                             </div>
                                         </td>
                                     </tr>
-                                ))}
+                                )))}
                         </tbody>
                     </table>
                 </div>

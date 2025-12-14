@@ -1,7 +1,7 @@
 
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth"; // Assuming auth setup is compatible with v5 structure or user existing lib
-import { prisma } from "@/lib/db";
+import prisma from "@/lib/db";
 import { mockPaymentProvider } from "@/lib/mockPayment";
 import { z } from "zod";
 

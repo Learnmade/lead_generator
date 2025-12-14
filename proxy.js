@@ -26,7 +26,7 @@ function rateLimit(ip) {
     return true;
 }
 
-export function middleware(request) {
+export default function proxy(request) {
     const ip = request.headers.get('x-forwarded-for') || 'unknown';
 
     // Only rate limit API routes

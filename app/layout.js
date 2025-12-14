@@ -8,6 +8,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata = {
   title: "Learnmades - AI B2B Automation",
   description: "Automate your sales pipeline with Learnmades AI-driven lead discovery.",
+  metadataBase: new URL('https://leadFlow.learn-made.in'),
 };
 
 export default function RootLayout({ children }) {
